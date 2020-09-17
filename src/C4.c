@@ -20,7 +20,7 @@
 #define LED_RATE pdMS_TO_TICKS(RATE)
 #define BUTTON_RATE 1
 #define T_ON 500
-#define LED_RATE 1000
+#define PERIOD 1000
 
 /*==================[definiciones de datos internos]=========================*/
 
@@ -128,27 +128,21 @@ void tarea_tecla( void* taskParmPtr )
 void tarea_led( void* taskParmPtr )
 {
     // ---------- CONFIGURACIONES ------------------------------
-    TickType_t xPeriodicity =  LED_RATE / portTICK_RATE_MS;		// Tarea periodica cada LED_RATE ms
+    TickType_t xPeriodicity =  PERIOD / portTICK_RATE_MS;		// Tarea periodica cada LED_RATE ms
     TickType_t xLastWakeTime = xTaskGetTickCount();
 
     // ---------- REPETIR POR SIEMPRE --------------------------
     while( TRUE )
     {
-    	if ((uxSemaphoreGetCount (sem_tec_pulsada))!=0){			// Si hay semàforo
-
-    		xSemaphoreTake ( sem_tec_pulsada , portMAX_DELAY );		// Se toma el semaforo
-    																// si se pulsò la tecla
-    		gpioWrite( LEDG , ON );
+    	if(xSemaphoreTake ( sem_tec_pulsada, xPeriodicity ) == pdTRUE){	// si se pulsò la tecla
+    		gpioWrite( LEDG , ON );									// Enciende el led verde
     		vTaskDelay(T_ON / portTICK_RATE_MS );
     		gpioWrite( LEDG , OFF );
-
-    		vTaskDelayUntil( &xLastWakeTime , xPeriodicity );		// Espera a terminar el perìodo
     		}
-    	else{														// si no hay semaforo
+    	else{														// si paso el tiempo (pdFALSE)
     		gpioWrite( LEDR , ON );									// Enciende led Rojo
     		vTaskDelay( T_ON / portTICK_RATE_MS );
     		gpioWrite( LEDR , OFF );
-
     		vTaskDelayUntil( &xLastWakeTime , xPeriodicity );
     		}
     }
